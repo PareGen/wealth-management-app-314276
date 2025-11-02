@@ -1,0 +1,15 @@
+// AUTO-GENERATED MODULES - Add these to app.module.ts imports array
+import { PortfoliosModule } from './modules/portfolios/portfolios.module';
+import { InvestmentsModule } from './modules/investments/investments.module';
+import { GoalsModule } from './modules/goals/goals.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { IntegrationsModule } from './modules/integrations/integrations.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+
+// Add to @Module imports array:
+// PortfoliosModule,
+// InvestmentsModule,
+// GoalsModule,
+// ReportsModule,
+// IntegrationsModule,
+// NotificationsModule
