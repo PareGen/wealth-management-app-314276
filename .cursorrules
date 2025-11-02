@@ -1,0 +1,558 @@
+# AI SaaS Builder Platform - Cursor Rules
+
+All AI behavior rules and code generation standards for this project.
+
+---
+
+## 🌍 GLOBAL RULES
+
+### Technology Stack
+
+- **Language**: TypeScript (mandatory)
+- **Frontend**: Next.js 15 (App Router)
+- **Backend**: NestJS 10+
+- **Database**: PostgreSQL + TypeORM
+- **Styling**: TailwindCSS + Shadcn/UI
+- **State Management**: Zustand / TanStack Query
+- **Package Manager**: pnpm
+- **Monorepo**: Turbo 2.0+
+  - ⚠️ Since Turbo 2.0, use `tasks` instead of `pipeline` in `turbo.json`
+  - ✅ AI must always generate Turbo config with `tasks` field
+
+### Code Standards
+
+- **Formatter**: Biome (2 spaces, semicolons, single quotes)
+- **File Naming**: kebab-case
+- **Component/Class**: PascalCase
+- **Variables/Functions**: camelCase
+- **Import Path**: `@/` prefix for absolute imports
+- **Import Order**: React → Libraries → Local modules
+
+### Architecture
+
+```
+apps/
+  frontend/
+  api/
+packages/
+  ui/
+  database/
+  core/
+```
+
+### AI Behavior Rules
+
+1. ✅ Always check existing conventions
+2. ✅ Auto-create folder structure for new modules
+3. ✅ Generate minimal and clean code
+4. ✅ Never copy config/env variables
+5. ✅ Generate TypeScript strict mode compliant code
+6. ✅ Generate lint and type error-free code
+7. ❌ Do not use deprecated APIs
+8. ❌ Do not use legacy syntax
+9. ❌ Do not use class-based React components
+
+### Security
+
+- ❌ Never commit `.env`, secrets, private keys
+- ✅ Sanitize all user inputs
+- ✅ HTTPS and CORS configuration mandatory
+- ✅ Use try/catch in async operations
+- ✅ Implement global error handling
+
+### Testing
+
+- **Unit**: Jest
+- **E2E**: Supertest / Playwright
+- Each new module must include at least 1 integration test
+- Use mocks for external APIs
+
+---
+
+## 🗄️ DATABASE RULES
+
+### Core Principles
+
+- **Engine**: PostgreSQL 15+
+- **ORM**: TypeORM
+- **Design**: Normalized, explicit, consistent
+- **Dependency Flow**: Domain → Application → Infrastructure
+
+### Entity Rules
+
+#### File and Naming
+
+- **Location**: `src/modules/<feature>/<feature>.entity.ts`
+- **Decorator**: `@Entity({ name: '<table_name>' })`
+- **Table Name**: snake_case plural (e.g., `users`, `user_roles`)
+- **Class Name**: PascalCase singular (e.g., `User`, `UserRole`)
+- **Columns**: snake_case + explicit types
+
+#### Base Entity Required Fields
+
+```typescript
+@PrimaryGeneratedColumn('uuid')
+id: string;
+
+@CreateDateColumn({ type: 'timestamp with time zone' })
+createdAt: Date;
+
+@UpdateDateColumn({ type: 'timestamp with time zone' })
+updatedAt: Date;
+
+@DeleteDateColumn({ type: 'timestamp with time zone', nullable: true })
+deletedAt?: Date | null;
+```
+
+### Column Types
+
+| Type        | Example                                                 | Rule                                    |
+| ----------- | ------------------------------------------------------- | --------------------------------------- |
+| Primary Key | `id: string`                                            | Always uuid                             |
+| Foreign Key | `userId: string`                                        | @ManyToOne + @JoinColumn                |
+| Enum        | `@Column({ type: 'enum', enum: UserRole })`             | TS enums with string values             |
+| JSON        | `@Column({ type: 'jsonb', nullable: true })`            | Only for flexible metadata              |
+| Boolean     | `@Column({ default: false })`                           | Always default false                    |
+| Numeric     | `@Column({ type: 'numeric', precision: 12, scale: 2 })` | For money/decimal                       |
+| Unique      | `@Index({ unique: true })`                              | Never rely solely on validation layer   |
+
+### Relations
+
+```typescript
+// OneToMany
+@OneToMany(() => Post, (post) => post.user, { cascade: ['insert', 'update'] })
+posts: Post[];
+
+// ManyToOne
+@ManyToOne(() => User, (user) => user.posts)
+@JoinColumn({ name: 'user_id' })
+user: User;
+```
+
+**Rules**:
+
+- ✅ Define both sides explicitly
+- ✅ Set cascade rules consciously
+- ❌ Do not use cascade delete in production (prefer soft delete)
+- ✅ Specify `onDelete` behavior explicitly (RESTRICT, SET NULL, etc.)
+- ✅ Use dedicated entity for many-to-many (not auto-generated)
+
+### Index and Constraints
+
+```typescript
+@Index('idx_<table>_<column>', ['column'])
+```
+
+- ✅ Index foreign keys and frequently queried fields
+- ✅ Unique constraint for natural keys (email, code)
+- ⚠️ Max 3-5 indexes per table (avoid over-indexing)
+
+### Migration Rules
+
+```bash
+npm run typeorm migration:generate
+npm run typeorm migration:run
+```
+
+**Location**: `src/core/database/migrations/`
+
+**Requirements**:
+
+- ✅ Descriptive name (e.g., `AddUserTable1701029916000.ts`)
+- ✅ Reversible `up()` and `down()` methods
+- ❌ AI never changes entity schema without migration
+- ⚠️ Warn if migration is missing
+
+### Transaction (UnitOfWork)
+
+```typescript
+await this.uow.execute(async (manager) => {
+  const user = manager.getRepository(User).create(dto);
+  await manager.save(user);
+});
+```
+
+- ✅ All write operations must be in transactions
+- ✅ Rollback on error
+- ❌ Do not await calls outside transaction scope
+
+### Security
+
+- ✅ Sanitize user-provided data before persisting
+- ✅ Hash/encrypt sensitive fields (password, secret, token)
+- ✅ Mask PII in logs
+- ❌ AI never generates interpolated SQL strings
+
+### AI Generation Behavior
+
+When generating or editing code:
+
+1. ✅ Check existing entity first
+2. ✅ Auto-add @Entity() and @Column() decorators
+3. ✅ Validate TypeORM imports
+4. ✅ Verify entities are registered in module's TypeOrmModule.forFeature()
+5. ✅ Check schema consistency → suggest migration if mismatch
+6. ❌ Do not generate raw SQL queries unless explicitly requested
+7. ⚠️ Auto-detect and warn:
+   - Missing foreign key constraints
+   - Unindexed query filters
+   - Ambiguous/duplicate field names
+8. ✅ Use strict nullability (nullable: false unless required)
+9. ✅ Use `TableIndex`, `TableForeignKey` in migration files (not `Index`)
+
+---
+
+## 🔧 BACKEND RULES
+
+### Clean Architecture Layers
+
+```
+domain/         # Pure business logic, entities, value objects
+application/    # Use-cases, services, ports
+infrastructure/ # TypeORM, database, external APIs
+interface/      # Controllers, DTOs, HTTP adapters
+```
+
+**Dependency Direction**: Inward only
+
+- ❌ No Domain → Framework dependency
+- ✅ Entities, Repositories, UseCases are framework-agnostic
+
+### Design Principles
+
+- **SOLID** - Single Responsibility, Open/Closed, Liskov, Interface Segregation, Dependency Inversion
+- **DRY** - Don't Repeat Yourself
+- **KISS** - Keep It Simple, Stupid
+- **YAGNI** - You Aren't Gonna Need It
+
+**Applications**:
+
+- ✅ Abstract repeating code
+- ✅ Functions short (≤40 lines), single responsibility
+- ❌ Avoid nested conditionals and deeply coupled logic
+- ❌ No over-engineering - simplest solid solution wins
+- ✅ Use generics, interfaces, DI consistently
+
+### Repository & CRUD Pattern
+
+```typescript
+@Injectable()
+export class UsersService extends GenericCrudService<User> {
+  constructor(
+    @InjectRepository(UserRepository) repo: UserRepository,
+    private readonly uow: UnitOfWork
+  ) {
+    super(repo);
+  }
+
+  async register(dto: CreateUserDto): Promise<User> {
+    return this.uow.execute(async () => {
+      const user = await this.repo.createUser(dto);
+      return user;
+    });
+  }
+}
+```
+
+### TypeScript Strict Mode
+
+```json
+{
+  "strict": true,
+  "noImplicitAny": true,
+  "noUncheckedIndexedAccess": true,
+  "strictNullChecks": true,
+  "exactOptionalPropertyTypes": true
+}
+```
+
+### ConfigService Type Safety
+
+When using ConfigService with `exactOptionalPropertyTypes: true`:
+
+- ✅ Use non-null assertion in `configService.get()` calls: `configService.get('KEY')!`
+- ✅ Or provide default value with generic type: `configService.get<string>('KEY', 'default')`
+- ⚠️ Guarantee required fields with Joi/Zod validation
+- ❌ Do not assign `configService.get()` result to types that may be undefined
+
+### Map/Filter Callback Types
+
+Avoid implicit any in array operations:
+
+- ✅ Use explicit types in map callbacks: `items.map((item: Type) => ...)`
+- ✅ Manually specify if TypeScript type inference is insufficient
+- ❌ Use `(item: ItemType)` instead of `(item)`
+
+### Nullable DTO Mapping
+
+With `exactOptionalPropertyTypes: true`:
+
+- ✅ Use nullish coalescing when mapping Entity to DTO: `entity.field ?? null`
+- ✅ **Optional fields in DTOs MUST be in `?: T | undefined` format**
+- ✅ **Optional fields in interfaces MUST be specified as `?: T | undefined`**
+- ❌ `field?: T` usage is incompatible with `exactOptionalPropertyTypes: true`
+- ❌ Do not directly assign `T | null | undefined` type to `T | null` type
+- ⚠️ Zod schemas return `T | undefined` with `.optional()`, define types accordingly
+
+### Biome Rules
+
+- ✅ Code must be Biome-validated before output
+- ✅ AI must auto-fix:
+  - Add missing imports
+  - Remove unused imports/vars
+  - Format code
+- ✅ Import order: Nest → Third-party → Internal (@/...)
+- ❌ No wildcard imports (`import * as`)
+- ❌ No default exports
+
+### 🔐 Security Standards
+
+#### General
+
+- ✅ All secrets and credentials only from ConfigService
+- ❌ Never inline or default in code
+- ✅ Sanitize all inputs (DTO + ValidationPipe)
+- ✅ Escape user values before DB writes
+- ✅ Use parameterized queries (TypeORM default)
+- ❌ Avoid dynamic SQL or raw queries
+
+#### Web Security
+
+- ✅ Global CORS + allowed origins list
+- ✅ HTTPS and secure cookies mandatory
+- ✅ Disable X-Powered-By header
+- ✅ Apply Helmet middleware
+- ✅ Rate-limiting (@nestjs/throttler) for brute-force
+
+#### Data Protection
+
+- ✅ Hash all passwords with Argon2 or bcrypt
+- ✅ Encrypt sensitive fields (PII) before persisting
+- ❌ Never log secrets or tokens
+- ✅ Exclude sensitive fields in DTOs and responses
+
+#### API Security
+
+- ✅ Auth: JWT or OAuth2 via PassportModule
+- ✅ Validate roles/permissions with @UseGuards()
+- ✅ Protect internal APIs (health, admin) with access control
+- ✅ Validate file uploads (MIME, size)
+
+#### AI Generation Security
+
+AI automatically:
+
+- ✅ Detect and reject insecure patterns (eval, unsafe SQL, unsafe HTML)
+- ❌ Never output hardcoded secrets or passwords
+- ⚠️ Warn if user input is directly injected into queries/templates
+- ✅ Apply output sanitization in rendered responses
+- ✅ Use CSRF token for form submission routes
+- ❌ Avoid unbounded recursion or infinite loops
+
+### Error Handling & Logging
+
+- ✅ Global HttpExceptionFilter mandatory
+- ✅ Nest Logger or Pino (no console.log in production)
+- ✅ Include requestId or traceId in logs
+- ❌ Do not leak stack traces in production responses
+- ✅ Error payload: `{ statusCode, message, path, timestamp }`
+
+### AI Development Behavior
+
+Before generating backend code:
+
+1. ✅ Scan import and module declarations
+2. ✅ Validate circular dependencies; resolve with forwardRef
+3. ✅ Auto-add new modules to parent modules
+4. ✅ Inject repository/service with DI token, not direct import
+
+**Reject invalid code**:
+
+- ❌ Missing provider registration
+- ❌ Unused DTOs/entities
+- ❌ Unhandled promise rejections
+- ❌ Missing return types
+
+### NestJS Best Practices
+
+- ✅ ConfigModule global + validated with Joi/Zod
+- ✅ ValidationPipe: `whitelist + forbidNonWhitelisted + transform: true`
+- ✅ ClassSerializerInterceptor for clean responses
+- ✅ Each module exports its service for external use
+- ✅ Global prefix `/api/v1`
+- ✅ All constants in `constants.ts` (no magic strings)
+- ✅ Use @nestjs/config and `.env.example`
+- ✅ `tsconfig.json`: `module: commonjs` + `moduleResolution: node`
+- ❌ Import from main package (`@package`) instead of subpath exports (`@package/subpath`)
+
+### Testing
+
+- **Unit**: Mock dependencies (jest.fn() / vi.fn())
+- **E2E**: Supertest + TestingModule
+- **Security**: Test unauthorized access returns 401/403
+- **Integration**: Test CRUD + transaction rollback
+- ✅ All test files must compile and pass lint
+
+---
+
+## 🎨 FRONTEND RULES
+
+### Framework & Stack
+
+- **Framework**: Next.js (App Router)
+- **UI Library**: Shadcn/UI + TailwindCSS
+- **Architecture**: Feature-driven
+
+```
+apps/frontend/
+  src/
+    app/
+    features/
+      auth/
+      dashboard/
+      billing/
+    components/
+      ui/
+      layout/
+```
+
+### Feature Structure
+
+Each feature must include:
+
+```
+/features/dashboard/
+  ├── components/
+  │     ├── DashboardHeader.tsx
+  │     └── StatsCard.tsx
+  ├── hooks/
+  │     └── useDashboardData.ts
+  ├── services.ts
+  ├── types.ts
+  └── index.ts
+```
+
+### Component Rules
+
+```typescript
+import { Button, Card } from "@/components/ui";
+```
+
+- ✅ Always functional components (ES6 syntax)
+- ✅ Import Shadcn components from central UI library
+- ✅ Server components for data-fetching pages
+- ✅ Client components for interactivity
+- ✅ Co-locate styles and logic within feature folder
+- ❌ Do not use inline styles - use Tailwind utility classes
+- ✅ Accessible semantic HTML (main, nav, section, header)
+- ❌ No React class components or legacy lifecycle methods
+
+### 💅 Styling & Theming
+
+- **Primary**: TailwindCSS
+- **Theme**: Shadcn ThemeProvider (mandatory)
+- **Class Order**: layout → spacing → color → typography → state → animation
+- ✅ All text WCAG AA color contrast compliant
+- ❌ Do not use arbitrary values (px-6 ✅, px-[26px] ❌)
+
+### AI Generation Behavior
+
+Generated code:
+
+- ✅ Must compile without lint and type errors
+- ✅ TypeScript strict mode compliant
+- ✅ Biome lint pass
+- ❌ No implicit any, undefined, null (without check)
+- ✅ Axios error handling: use `(error as AxiosError<{ message: string }>)`
+- ✅ Define optional props in `prop?: Type | undefined` format
+
+**TypeScript Flags**:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "exactOptionalPropertyTypes": true
+  }
+}
+```
+
+**Auto-fix Required**:
+
+- ❌ Missing types in component props
+- ❌ Unused imports/variables
+- ❌ Incorrect React.FC usage
+
+### Linting & Formatting (Biome)
+
+- **Config**: biome:recommended
+- **Indentation**: 2 spaces
+- **Semicolons**: ✅ mandatory
+- **Quotes**: single quotes
+- **Import Order**: React → third-party → internal (@/)
+- ✅ AI must auto-fix common lint issues
+- ❌ Do not use unnecessary eslint-disable comments
+- ✅ Prefer named exports (instead of default exports)
+- ❌ Extract named handlers instead of long inline functions
+
+### Testing
+
+- **Framework**: React Testing Library + Jest
+- ✅ Main component render test for each feature
+- ❌ Do not use snapshot testing for dynamic UI
+- **Mocks**: Use vi.fn() or jest.fn() consistently
+
+### Performance & Best Practices
+
+- ✅ Lazy load heavy components with `dynamic()`
+- ✅ Use `React.memo` for expensive re-renders
+- ✅ Static rendering (SSG) when possible
+- ❌ Do not data fetch in client components unless absolutely necessary
+- ✅ Always wrap fetch calls with error boundaries
+
+---
+
+## 🎯 AI GENERAL BEHAVIOR
+
+### When Generating Code
+
+1. ✅ Check existing code, follow patterns
+2. ✅ Generate TypeScript strict mode + Biome compliant code
+3. ✅ Auto-detect and reject security vulnerabilities
+4. ✅ Follow SOLID, DRY, KISS principles
+5. ✅ Write testable, modular, clean code
+6. ❌ Do not use magic strings or hardcoded values
+7. ❌ Do not use deprecated or unsafe APIs
+8. ❌ Do not over-engineer
+
+### Error Management
+
+1. ✅ Auto-fix all lint errors
+2. ✅ Auto-add missing imports
+3. ✅ Auto-remove unused code
+4. ✅ Fix type errors
+5. ⚠️ Explain issues that cannot be fixed
+
+### Output Format
+
+- ✅ Minimal, incremental edits
+- ✅ Clean, readable, well-documented code
+- ✅ Cursor-friendly diffs
+- ❌ Do not add unnecessary comments or boilerplate
+
+---
+
+## ✅ PRIORITY ORDER
+
+1. **Security** - Never compromise
+2. **Type Safety** - TypeScript strict mode mandatory
+3. **Code Quality** - SOLID, DRY, KISS
+4. **Performance** - Optimized and scalable
+5. **Maintainability** - Readable and testable
+6. **Documentation** - JSDoc where necessary
+
+---
+
+These rules are **mandatory** and must be applied in all AI code generation processes.

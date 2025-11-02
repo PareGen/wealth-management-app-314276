@@ -1,0 +1,35 @@
+{
+  "name": "saas-template-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CRUD SaaS Template with Next.js, NestJS, and PostgreSQL",
+  "author": "PareTeknoloji",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "build:api": "pnpm --filter @saas-template/database build && pnpm --filter @saas-template/core build && pnpm --filter @saas-template/api build",
+    "build:frontend": "pnpm --filter @saas-template/core build && pnpm --filter @saas-template/ui build && pnpm --filter @saas-template/frontend build",
+    "start:api": "cd apps/api && pnpm run migration:run && pnpm start:prod",
+    "start:frontend": "cd apps/frontend && pnpm start",
+    "lint": "turbo run lint",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check --apply .",
+    "check:ci": "biome check .",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "typecheck": "turbo run typecheck",
+    "validate": "pnpm check:ci && pnpm typecheck && pnpm build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.3",
+    "turbo": "^2.0.12",
+    "typescript": "^5.5.4"
+  },
+  "workspaces": ["apps/*", "packages/*"]
+}

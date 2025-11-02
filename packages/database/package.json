@@ -1,0 +1,44 @@
+{
+  "name": "@saas-template/database",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./entities": {
+      "require": "./dist/entities/index.js",
+      "import": "./dist/entities/index.js",
+      "types": "./dist/entities/index.d.ts"
+    },
+    "./config": {
+      "require": "./dist/config/index.js",
+      "import": "./dist/config/index.js",
+      "types": "./dist/config/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/config/data-source.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/config/data-source.ts"
+  },
+  "dependencies": {
+    "typeorm": "^0.3.20",
+    "pg": "^8.12.0",
+    "reflect-metadata": "^0.2.2",
+    "typescript": "^5.5.4",
+    "ts-node": "^10.9.2",
+    "@types/node": "^20.14.0",
+    "@types/pg": "^8.11.6"
+  },
+  "devDependencies": {}
+}
